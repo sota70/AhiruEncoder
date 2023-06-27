@@ -17,14 +17,19 @@ def compile_script(script_instructions: list[dict[str, str]],
         # NOTE: debug
         print(f"STRING: {instruction['STRING']}")
         for char in instruction["STRING"]:
-            # NOTE: debug
-            print(f"{char} bytes: ", end="")
-            print(bytes([int(hex_instructions[char].split(",")[2], 16)]), end="")
-            print(bytes([int(hex_instructions[char].split(",")[0], 16)]), end="")
-            print()
-
             if char == " " or char == ",":
+                print("space or comma found")
+                print(
+                    f"decimal: {int(hex_instructions[char].split(',')[2], 16)}")
+                print(
+                    f"bytes: {bytes([int(hex_instructions[char].split(',')[2], 16)])}")
+
+                print(
+                    f"decimal: {int(hex_instructions[char].split(',')[0], 16)}")
                 continue
+            # NOTE: bytesコンストラクターは、１０進数をbytes型に変換するが
+            # 　　　その際にアスキーコードと同じ値は、アスキー文字に変換してしまう
+            #       54 -> アスキー文字の6
             decimal_script.append(
                 int(hex_instructions[char].split(",")[2], 16))
             decimal_script.append(
@@ -53,7 +58,7 @@ def parse_raw_script(raw_script: str) -> list[dict[str, str]]:
 if __name__ == "__main__":
     hex_instructions: dict[str, str] = load_key_instructions(
         "instructions.json")
-    # NOTE:
+    # NOTE: debug
     print(hex_instructions)
     with open("script.txt", "r") as file:
         compiled_script = compile_raw_script(file.read(), hex_instructions)
