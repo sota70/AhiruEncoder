@@ -9,25 +9,32 @@ def load_key_instructions(instruction_file_path: str):
     return instructions
 
 
+def compile_string_script(text: str, hex_instructions: dict[str, str]) -> bytes:
+    decimal_script: list[int] = []
+    for char in text:
+        decimal_script.append(int(hex_instructions[char].split(",")[2], 16))
+        decimal_script.append(int(hex_instructions[char].split(",")[0], 16))
+    return bytes(decimal_script)
+
+
+def compile_delay_script(milli_second: int) -> bytes:
+    # NOTE: DELAY instructionは\x00の後に何ミリ秒遅延させるかを16進数で書く
+    #       Ex) DELAY 100 -> \x00\x64
+    decimal_script: list[int] = [0, milli_second]
+    return bytes(decimal_script)
+
+
 def compile_script(script_instructions: list[dict[str, str]],
                    hex_instructions: dict[str, str]) -> bytes:
-    decimal_script: list[int] = []
+    compiled_script: bytes = bytes()
     for instruction in script_instructions:
-        if "STRING" not in instruction.keys():
+        if "STRING" in instruction.keys():
+            compiled_script += compile_string_script(instruction["STRING"], hex_instructions)
             continue
-        # NOTE: debug
-        print(f"STRING: {instruction['STRING']}")
-        for char in instruction["STRING"]:
-            # NOTE: bytesコンストラクターは、１０進数をbytes型に変換するが
-            # 　　　その際にアスキーコードと同じ値は、アスキー文字に変換してしまう
-            #       54 -> アスキー文字の6
-            #       だが、実際に書き込まれるのはアスキー文字ではなく２進数で構成されるbytesなので
-            #       気にする必要は無い
-            decimal_script.append(
-                int(hex_instructions[char].split(",")[2], 16))
-            decimal_script.append(
-                int(hex_instructions[char].split(",")[0], 16))
-    return bytes(decimal_script)
+        if "DELAY" in instruction.keys():
+            compiled_script += compile_delay_script(int(instruction["DELAY"]))
+            continue
+    return compiled_script
 
 
 def compile_raw_script(raw_script: str,
