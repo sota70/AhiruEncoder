@@ -134,8 +134,11 @@ def parse_raw_script(raw_script: str) -> list[dict[str, str]]:
     instructions: list[dict[str, str]] = []
     command: str = ""
     arg: str = ""
+    comment_out_instruction: str = "REM"
     first_space_char_pos: int
     for line in raw_script.split("\n"):
+        if line == "\n" or line.startswith(comment_out_instruction):
+            continue
         first_space_char_pos = line.find(" ")
         command = line.split(" ")[0]
         # NOTE: 命令と引数は、最初の空白文字で区切られる
