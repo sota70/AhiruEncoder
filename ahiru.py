@@ -55,7 +55,25 @@ return: エンコードしたバイトーコード
 def compile_delay_script(milli_second: int) -> bytes:
     # NOTE: DELAY instructionは\x00の後に何ミリ秒遅延させるかを16進数で書く
     #       Ex) DELAY 100 -> \x00\x64
-    decimal_script: list[int] = [0, milli_second]
+    decimal_script: list[int] = []
+    instruction_code: int = 0
+    delay: int = int(milli_second)
+    full_delay: int = 255
+    full_delay_count: int = -1
+    if delay < 256:
+        return bytes([instruction_code, delay])
+    # NOTE: バイトコードは1バイトに0~255までの数しか表現できない
+    #       そこで、複数の遅延命令に分ける
+    #       遅延が255以下になるまで、255ミリ秒の遅延命令をする
+    #       遅延が255以下になったら、その値で遅延命令をして終わる
+    #       Ex) 1000ミリ秒の遅延の場合
+    #           255ミリ秒の遅延を3回した後、余った235ミリ秒で遅延をする
+    full_delay_count = int(delay / 255)
+    for i in range(full_delay_count):
+        decimal_script.append(instruction_code)
+        decimal_script.append(full_delay)
+    decimal_script.append(instruction_code)
+    decimal_script.append(delay - full_delay * full_delay_count)
     return bytes(decimal_script)
 
 
