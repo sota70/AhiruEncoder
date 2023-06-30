@@ -43,6 +43,14 @@ def compile_string_script(text: str, hex_instructions: dict[str, str]) -> bytes:
     return bytes(decimal_script)
 
 
+def compile_special_char_script(special_char: str, hex_instructions: dict[str, str]) -> bytes:
+    decimal_script: list[int] = []
+    if special_char not in hex_instructions.keys():
+        return bytes()
+    decimal_script.append(int(hex_instructions[special_char].split(",")[2], 16))
+    decimal_script.append(int(hex_instructions[special_char].split(",")[0], 16))
+    return bytes(decimal_script)
+
 '''
 遅延命令(DELAY)をバイトコードにエンコードする関数
 
@@ -90,16 +98,72 @@ param hex_instructions: キー入力とそれに対応する16進数の対応表
                         STRING命令をエンコードするときに使う
 return: エンコードしたバイトコードを返す
 '''
-def compile_script(script_instructions: list[dict[str, str]],
+def compile_script(script_instructions: list[tuple[str, str]],
                    hex_instructions: dict[str, str]) -> bytes:
     compiled_script: bytes = bytes()
+    command: str = ""
+    arg: str = ""
+    special_chars: list[str] = [
+        "CTRL",
+        "CONTROL",
+        "SHIFT",
+        "ALT",
+        "GUI",
+        "WINDOWS",
+        "COMMAND",
+        "ENTER",
+        "ESC",
+        "ESCAPE",
+        "BACKSPACE",
+        "TAB",
+        "SPACE",
+        "CAPSLOCK",
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7",
+        "F8",
+        "F9",
+        "F10",
+        "F11",
+        "F12",
+        "PRINTSCREEN",
+        "SCROLLLOCK",
+        "PAUSE",
+        "BREAK",
+        "INSERT",
+        "HOME",
+        "PAGEUP",
+        "DELETE",
+        "DEL",
+        "END",
+        "PAGEDOWN",
+        "RIGHTARROW",
+        "RIGHT",
+        "LEFTARROW",
+        "LEFT",
+        "DOWNARROW",
+        "DOWN",
+        "UPARROW",
+        "UP",
+        "NUMLOCK",
+        "MENU",
+        "APP"
+    ]
     for instruction in script_instructions:
-        if "STRING" in instruction.keys():
-            compiled_script += compile_string_script(instruction["STRING"], hex_instructions)
+        command = instruction[0]
+        arg = instruction[1]
+        if command == "STRING":
+            compiled_script += compile_string_script(arg, hex_instructions)
             continue
-        if "DELAY" in instruction.keys():
-            compiled_script += compile_delay_script(int(instruction["DELAY"]))
+        if command == "DELAY":
+            compiled_script += compile_delay_script(int(arg))
             continue
+        if command in special_chars:
+            compiled_script += compile_special_char_script(command, hex_instructions)
     return compiled_script
 
 
@@ -130,8 +194,8 @@ param raw_script: 生のスクリプト
 
 return: 辞書形式になったスクリプトを返す
 '''
-def parse_raw_script(raw_script: str) -> list[dict[str, str]]:
-    instructions: list[dict[str, str]] = []
+def parse_raw_script(raw_script: str) -> list[tuple[str, str]]:
+    instructions: list[tuple[str, str]] = []
     command: str = ""
     arg: str = ""
     comment_out_instruction: str = "REM"
@@ -143,7 +207,7 @@ def parse_raw_script(raw_script: str) -> list[dict[str, str]]:
         command = line.split(" ")[0]
         # NOTE: 命令と引数は、最初の空白文字で区切られる
         arg = line[first_space_char_pos + 1:]
-        instructions.append({command: arg})
+        instructions.append((command, arg))
     return instructions
 
 
